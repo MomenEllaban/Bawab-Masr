@@ -1,0 +1,530 @@
+// Prisma Schema — Bawab Masr (بواب مصر)
+// المرجع: Bawab_Masr_Full_Project_Plan_and_OpenCode_Prompt.md
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ============================================================
+// ENUMS
+// ============================================================
+
+enum UserStatus {
+  ACTIVE
+  SUSPENDED
+  PENDING_VERIFICATION
+  DEACTIVATED
+}
+
+enum JobStatus {
+  DRAFT
+  PENDING_REVIEW
+  PUBLISHED
+  PAUSED
+  CLOSED
+  REJECTED
+  EXPIRED
+  ARCHIVED
+}
+
+enum ApplicationStatus {
+  SUBMITTED
+  VIEWED
+  SHORTLISTED
+  INTERVIEW_SCHEDULED
+  OFFERED
+  HIRED
+  REJECTED
+  WITHDRAWN
+}
+
+enum WorkType {
+  FULL_TIME      // دوام كامل
+  PART_TIME      // دوام جزئي
+  CONTRACT       // عقد
+  TEMPORARY      // مؤقت
+}
+
+enum WorkSchedule {
+  MORNING        // صباحي
+  EVENING        // مسائي
+  NIGHT          // ليلي
+  ROTATING       // متقلب
+  FLEXIBLE       // مرن
+}
+
+enum SalaryPeriod {
+  MONTHLY        // شهري
+  DAILY          // يومي
+  WEEKLY         // أسبوعي
+}
+
+enum EmployerType {
+  INDIVIDUAL_OWNER   // مالك فردي
+  UNION_REP          // ممثل اتحاد ملاك
+  MANAGEMENT_COMPANY // شركة إدارة
+}
+
+enum OrgRole {
+  OWNER          // مالك المؤسسة
+  HR_MANAGER     // مسؤول توظيف
+  VIEWER         // عضو مشاهدة
+}
+
+enum ReviewStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  MORE_INFO_NEEDED
+}
+
+enum ReportStatus {
+  OPEN
+  UNDER_REVIEW
+  RESOLVED
+  DISMISSED
+}
+
+enum NotificationType {
+  NEW_APPLICATION
+  APPLICATION_STATUS_CHANGED
+  JOB_REVIEW_DECISION
+  ACCOUNT_REVIEW_DECISION
+  REPORT_UPDATE
+  SYSTEM
+}
+
+enum SeekerAvailability {
+  IMMEDIATE          // فوري
+  TWO_WEEKS          // أسبوعين
+  ONE_MONTH          // شهر
+  NOT_LOOKING        // لا يبحث حالياً
+}
+
+// ============================================================
+// USERS & AUTH
+// ============================================================
+
+model User {
+  id                String    @id @default(cuid())
+  phone             String    @unique
+  email             String?   @unique
+  name              String
+  passwordHash      String?
+  phoneVerifiedAt   DateTime?
+  status            UserStatus @default(PENDING_VERIFICATION)
+  lastLoginAt       DateTime?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  // Relations
+  seekerProfile     SeekerProfile?
+  employerProfile   EmployerProfile?
+  orgMemberships    OrganizationMember[]
+  applications      JobApplication[]     @relation("ApplicantApplications")
+  savedJobs         SavedJob[]
+  notifications     Notification[]
+  reportsSubmitted  Report[]             @relation("ReportSubmitter")
+  phoneVerifications PhoneVerification[]
+  auditLogs         AuditLog[]           @relation("AuditLogActor")
+  systemRoles       SystemUserRole[]
+
+  @@index([status])
+  @@index([createdAt])
+}
+
+model SystemRole {
+  id          String           @id @default(cuid())
+  name        String           @unique  // ADMIN, MODERATOR, CUSTOMER_SUPPORT, FINANCE
+  description String?
+  users       SystemUserRole[]
+}
+
+model SystemUserRole {
+  id       String     @id @default(cuid())
+  user     User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId   String
+  role     SystemRole @relation(fields: [roleId], references: [id])
+  roleId   String
+  grantedAt DateTime  @default(now())
+
+  @@unique([userId, roleId])
+}
+
+// ============================================================
+// PHONE VERIFICATION
+// ============================================================
+
+model PhoneVerification {
+  id           String    @id @default(cuid())
+  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId       String
+  phone        String
+  codeHash     String    // hash للـ OTP — لا تخزن OTP كنص
+  expiresAt    DateTime
+  consumedAt   DateTime?
+  attempts     Int       @default(0)
+  createdAt    DateTime  @default(now())
+
+  @@index([userId])
+  @@index([expiresAt])
+}
+
+// ============================================================
+// SEEKER PROFILE
+// ============================================================
+
+model SeekerProfile {
+  id                String             @id @default(cuid())
+  user              User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId            String             @unique
+  bio               String?
+  yearsExperience   Int?
+  preferredWorkType WorkType?
+  availability      SeekerAvailability @default(IMMEDIATE)
+  expectedSalaryMin Int?               // بالجنيه المصري
+  expectedSalaryMax Int?
+  isProfilePublic   Boolean            @default(true)
+  hasResume         Boolean            @default(false)
+  resumeUrl         String?
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+
+  // Relations
+  skills            SeekerSkill[]
+  preferredAreas    SeekerPreferredArea[]
+
+  @@index([availability])
+}
+
+model Skill {
+  id      String        @id @default(cuid())
+  name    String        @unique
+  seekers SeekerSkill[]
+}
+
+model SeekerSkill {
+  id              String        @id @default(cuid())
+  seekerProfile   SeekerProfile @relation(fields: [seekerProfileId], references: [id], onDelete: Cascade)
+  seekerProfileId String
+  skill           Skill         @relation(fields: [skillId], references: [id])
+  skillId         String
+
+  @@unique([seekerProfileId, skillId])
+}
+
+model SeekerPreferredArea {
+  id              String        @id @default(cuid())
+  seekerProfile   SeekerProfile @relation(fields: [seekerProfileId], references: [id], onDelete: Cascade)
+  seekerProfileId String
+  area            Area          @relation(fields: [areaId], references: [id])
+  areaId          String
+
+  @@unique([seekerProfileId, areaId])
+}
+
+// ============================================================
+// EMPLOYER PROFILE
+// ============================================================
+
+model EmployerProfile {
+  id               String       @id @default(cuid())
+  user             User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId           String       @unique
+  displayName      String
+  employerType     EmployerType
+  isVerified       Boolean      @default(false)
+  verifiedAt       DateTime?
+  createdAt        DateTime     @default(now())
+  updatedAt        DateTime     @updatedAt
+
+  // Relations
+  properties       Property[]
+  postedJobs       Job[]        @relation("JobPoster")
+  orgMemberships   OrganizationMember[]
+}
+
+// ============================================================
+// ORGANIZATIONS
+// ============================================================
+
+model Organization {
+  id              String               @id @default(cuid())
+  name            String
+  registrationNo  String?              @unique
+  description     String?
+  isVerified      Boolean              @default(false)
+  verifiedAt      DateTime?
+  createdAt       DateTime             @default(now())
+  updatedAt       DateTime             @updatedAt
+
+  // Relations
+  members         OrganizationMember[]
+  properties      Property[]
+  jobs            Job[]                @relation("OrgJobs")
+}
+
+model OrganizationMember {
+  id              String          @id @default(cuid())
+  org             Organization    @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  orgId           String
+  user            User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId          String
+  employer        EmployerProfile? @relation(fields: [employerProfileId], references: [id])
+  employerProfileId String?
+  role            OrgRole
+  isActive        Boolean         @default(true)
+  joinedAt        DateTime        @default(now())
+
+  @@unique([orgId, userId])
+  @@index([orgId])
+  @@index([userId])
+}
+
+// ============================================================
+// GEOGRAPHY
+// ============================================================
+
+model Province {
+  id        String @id @default(cuid())
+  name      String @unique  // مثال: الإسكندرية
+  slug      String @unique
+  isActive  Boolean @default(true)
+  areas     Area[]
+  jobs      Job[]
+}
+
+model Area {
+  id          String    @id @default(cuid())
+  name        String    // مثال: سموحة
+  slug        String
+  province    Province  @relation(fields: [provinceId], references: [id])
+  provinceId  String
+  isActive    Boolean   @default(true)
+  jobs        Job[]
+  properties  Property[]
+  seekerPrefs SeekerPreferredArea[]
+
+  @@unique([provinceId, slug])
+  @@index([provinceId])
+}
+
+// ============================================================
+// PROPERTIES
+// ============================================================
+
+model Property {
+  id              String           @id @default(cuid())
+  name            String
+  description     String?
+  privateNotes    String?          // ملاحظات داخلية — لا تُعرض للعامة
+  area            Area?            @relation(fields: [areaId], references: [id])
+  areaId          String?
+  owner           EmployerProfile? @relation(fields: [ownerId], references: [id])
+  ownerId         String?
+  org             Organization?    @relation(fields: [orgId], references: [id])
+  orgId           String?
+  isActive        Boolean          @default(true)
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+
+  jobs            Job[]
+
+  @@index([ownerId])
+  @@index([orgId])
+  @@index([areaId])
+}
+
+// ============================================================
+// JOBS
+// ============================================================
+
+model JobCategory {
+  id    String @id @default(cuid())
+  name  String @unique
+  slug  String @unique
+  jobs  Job[]
+}
+
+model Job {
+  id                  String         @id @default(cuid())
+  slug                String         @unique
+  title               String
+  description         String
+  responsibilities    String?
+  requirements        String?
+  workType            WorkType
+  workSchedule        WorkSchedule?
+  salaryMin           Int?           // بالجنيه المصري
+  salaryMax           Int?
+  salaryPeriod        SalaryPeriod   @default(MONTHLY)
+  isSalaryPublic      Boolean        @default(false)
+  experienceYears     Int?
+  housingProvided     Boolean        @default(false)
+  expectedStartDate   DateTime?
+  applicationDeadline DateTime?
+  status              JobStatus      @default(DRAFT)
+  reviewStatus        ReviewStatus   @default(PENDING)
+  rejectionReason     String?
+  publishedAt         DateTime?
+  closedAt            DateTime?
+  expiresAt           DateTime?
+  createdAt           DateTime       @default(now())
+  updatedAt           DateTime       @updatedAt
+
+  // Relations
+  poster              EmployerProfile @relation("JobPoster", fields: [posterId], references: [id])
+  posterId            String
+  org                 Organization?   @relation("OrgJobs", fields: [orgId], references: [id])
+  orgId               String?
+  property            Property?       @relation(fields: [propertyId], references: [id])
+  propertyId          String?
+  province            Province?       @relation(fields: [provinceId], references: [id])
+  provinceId          String?
+  area                Area?           @relation(fields: [areaId], references: [id])
+  areaId              String?
+  category            JobCategory?    @relation(fields: [categoryId], references: [id])
+  categoryId          String?
+
+  applications        JobApplication[]
+  savedBy             SavedJob[]
+  reviews             ModerationReview[] @relation("JobReviews")
+
+  @@index([status, reviewStatus])
+  @@index([provinceId])
+  @@index([areaId])
+  @@index([publishedAt])
+  @@index([posterId])
+  @@index([workType])
+  @@index([categoryId])
+}
+
+// ============================================================
+// APPLICATIONS
+// ============================================================
+
+model JobApplication {
+  id            String            @id @default(cuid())
+  job           Job               @relation(fields: [jobId], references: [id])
+  jobId         String
+  applicant     User              @relation("ApplicantApplications", fields: [applicantId], references: [id])
+  applicantId   String
+  status        ApplicationStatus @default(SUBMITTED)
+  coverMessage  String?
+  createdAt     DateTime          @default(now())
+  updatedAt     DateTime          @updatedAt
+
+  statusHistory ApplicationStatusHistory[]
+
+  @@unique([jobId, applicantId])  // منع التقديم المكرر
+  @@index([jobId])
+  @@index([applicantId])
+  @@index([status])
+}
+
+model ApplicationStatusHistory {
+  id             String            @id @default(cuid())
+  application    JobApplication    @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  applicationId  String
+  fromStatus     ApplicationStatus?
+  toStatus       ApplicationStatus
+  changedByUserId String           // ID المنفذ — بدون علاقة مباشرة لحماية البيانات
+  note           String?
+  changedAt      DateTime          @default(now())
+
+  @@index([applicationId])
+  @@index([changedAt])
+}
+
+model SavedJob {
+  id          String   @id @default(cuid())
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId      String
+  job         Job      @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  jobId       String
+  savedAt     DateTime @default(now())
+
+  @@unique([userId, jobId])
+  @@index([userId])
+}
+
+// ============================================================
+// NOTIFICATIONS
+// ============================================================
+
+model Notification {
+  id          String           @id @default(cuid())
+  user        User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId      String
+  type        NotificationType
+  title       String
+  body        String?
+  internalUrl String?
+  readAt      DateTime?
+  createdAt   DateTime         @default(now())
+
+  @@index([userId, readAt])
+  @@index([createdAt])
+}
+
+// ============================================================
+// REPORTS & MODERATION
+// ============================================================
+
+model Report {
+  id            String       @id @default(cuid())
+  reporter      User         @relation("ReportSubmitter", fields: [reporterId], references: [id])
+  reporterId    String
+  targetType    String       // "JOB" | "USER" | "ORG"
+  targetId      String
+  reason        String
+  details       String?
+  status        ReportStatus @default(OPEN)
+  assignedToId  String?
+  resolvedAt    DateTime?
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+
+  @@index([status])
+  @@index([targetType, targetId])
+  @@index([reporterId])
+}
+
+model ModerationReview {
+  id            String       @id @default(cuid())
+  reviewedById  String       // ID المراجع — بدون علاقة مباشرة
+  decision      ReviewStatus
+  reason        String?
+  reviewedAt    DateTime     @default(now())
+
+  // Polymorphic — مراجعة وظيفة
+  job           Job?         @relation("JobReviews", fields: [jobId], references: [id])
+  jobId         String?
+
+  @@index([jobId])
+  @@index([decision])
+}
+
+// ============================================================
+// AUDIT LOG
+// ============================================================
+
+model AuditLog {
+  id         String   @id @default(cuid())
+  actor      User?    @relation("AuditLogActor", fields: [actorId], references: [id])
+  actorId    String?
+  action     String   // مثال: "JOB_PUBLISHED", "USER_SUSPENDED"
+  entityType String   // مثال: "Job", "User"
+  entityId   String
+  metadata   Json?    // بيانات إضافية — لا أسرار ولا بيانات شخصية غير لازمة
+  createdAt  DateTime @default(now())
+
+  @@index([actorId])
+  @@index([entityType, entityId])
+  @@index([createdAt])
+  @@index([action])
+}

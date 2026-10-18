@@ -1,0 +1,231 @@
+@import "tailwindcss";
+
+/* ============================================================
+   Bawab Masr — Design Tokens
+   ============================================================ */
+
+:root {
+  /* ألوان رئيسية */
+  --color-primary: #1e3a5f;       /* كحلي للثقة */
+  --color-primary-light: #2d5282;
+  --color-primary-dark: #152a45;
+  --color-accent: #0ea5e9;        /* أزرق فاتح */
+  --color-success: #059669;       /* أخضر تأكيد */
+  --color-warning: #d97706;       /* برتقالي تحذير */
+  --color-danger: #dc2626;        /* أحمر خطأ */
+
+  /* خلفيات */
+  --color-bg: #f8fafc;
+  --color-bg-card: #ffffff;
+  --color-bg-muted: #f1f5f9;
+
+  /* نصوص */
+  --color-text: #0f172a;
+  --color-text-muted: #64748b;
+  --color-text-light: #94a3b8;
+
+  /* حدود */
+  --color-border: #e2e8f0;
+
+  /* الخط */
+  --font-cairo: "Cairo", sans-serif;
+
+  /* Radius */
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 16px;
+}
+
+/* ============================================================
+   الخط الافتراضي
+   ============================================================ */
+
+body {
+  font-family: var(--font-cairo), sans-serif;
+  background-color: var(--color-bg);
+  color: var(--color-text);
+  direction: rtl;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ============================================================
+   Utility Classes
+   ============================================================ */
+
+.container-app {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 0 1rem;
+}
+
+@media (min-width: 768px) {
+  .container-app {
+    padding: 0 2rem;
+  }
+}
+
+/* بطاقة */
+.card {
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: 1.5rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+/* أزرار */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.625rem 1.25rem;
+  border-radius: var(--radius-sm);
+  font-size: 0.9375rem;
+  font-weight: 600;
+  font-family: var(--font-cairo), sans-serif;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  border: none;
+  text-decoration: none;
+}
+
+.btn-primary {
+  background: var(--color-primary);
+  color: white;
+}
+
+.btn-primary:hover {
+  background: var(--color-primary-light);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(30, 58, 95, 0.3);
+}
+
+.btn-secondary {
+  background: transparent;
+  color: var(--color-primary);
+  border: 2px solid var(--color-primary);
+}
+
+.btn-secondary:hover {
+  background: var(--color-primary);
+  color: white;
+}
+
+.btn-accent {
+  background: var(--color-accent);
+  color: white;
+}
+
+.btn-lg {
+  padding: 0.875rem 2rem;
+  font-size: 1.0625rem;
+}
+
+/* حقول النماذج */
+.form-input {
+  width: 100%;
+  padding: 0.625rem 0.875rem;
+  border: 1.5px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  font-size: 0.9375rem;
+  font-family: var(--font-cairo), sans-serif;
+  color: var(--color-text);
+  background: white;
+  transition: border-color 0.15s ease;
+  direction: rtl;
+}
+
+.form-input:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px rgba(30, 58, 95, 0.1);
+}
+
+.form-input::placeholder {
+  color: var(--color-text-light);
+}
+
+.form-label {
+  display: block;
+  font-weight: 600;
+  font-size: 0.875rem;
+  color: var(--color-text);
+  margin-bottom: 0.375rem;
+}
+
+.form-error {
+  color: var(--color-danger);
+  font-size: 0.8125rem;
+  margin-top: 0.25rem;
+}
+
+/* تنبيهات */
+.alert {
+  padding: 0.875rem 1rem;
+  border-radius: var(--radius-sm);
+  font-size: 0.9rem;
+  border: 1px solid transparent;
+}
+
+.alert-success {
+  background: #ecfdf5;
+  border-color: #6ee7b7;
+  color: #065f46;
+}
+
+.alert-error {
+  background: #fef2f2;
+  border-color: #fca5a5;
+  color: #991b1b;
+}
+
+.alert-warning {
+  background: #fffbeb;
+  border-color: #fde68a;
+  color: #92400e;
+}
+
+/* Badge الحالة */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.25rem 0.625rem;
+  border-radius: 9999px;
+  font-size: 0.8125rem;
+  font-weight: 600;
+}
+
+.badge-published  { background: #dcfce7; color: #166534; }
+.badge-pending    { background: #fef9c3; color: #854d0e; }
+.badge-rejected   { background: #fee2e2; color: #991b1b; }
+.badge-draft      { background: #f1f5f9; color: #475569; }
+.badge-hired      { background: #e0f2fe; color: #075985; }
+
+/* تحميل */
+.skeleton {
+  background: linear-gradient(90deg, #e2e8f0 25%, #f1f5f9 50%, #e2e8f0 75%);
+  background-size: 200% 100%;
+  animation: skeleton-loading 1.5s infinite;
+  border-radius: var(--radius-sm);
+}
+
+@keyframes skeleton-loading {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* ============================================================
+   RTL Fixes
+   ============================================================ */
+
+[dir="rtl"] select {
+  background-position: left 0.75rem center;
+}
+
+/* ============================================================
+   Print
+   ============================================================ */
+
+@media print {
+  .no-print { display: none !important; }
+}

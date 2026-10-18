@@ -1,4 +1,4 @@
-# بواب مصر — Bawab Masr
+# Bawab-Masr — بواب مصر
 
 منصة ويب مصرية تربط البوابين والباحثين عن عمل بأصحاب العقارات واتحادات الملاك وشركات إدارة العقارات. البداية في الإسكندرية، مع قابلية التوسع لباقي مصر.
 
@@ -6,13 +6,13 @@
 
 | التقنية | الإصدار | الغرض |
 |---------|---------|--------|
-| Next.js | 16+ | App Router — واجهة وخادم |
+| Next.js | 16.4.2 | App Router — واجهة وخادم |
 | TypeScript | 5+ | Type safety |
 | Tailwind CSS | 4+ | التصميم |
-| Prisma | 6+ | ORM لقاعدة البيانات |
+| Prisma | 7.10.1 | ORM لقاعدة البيانات |
 | Neon PostgreSQL | — | قاعدة البيانات |
-| NextAuth.js | 5 (beta) | المصادقة |
-| Zod | 3+ | التحقق من المدخلات |
+| NextAuth.js | 5 (beta.32) | المصادقة |
+| Zod | 4+ | التحقق من المدخلات |
 
 ## متطلبات التشغيل
 
@@ -35,11 +35,18 @@ cp .env.example .env.local
 # ثم عدّل .env.local وأضف بيانات Neon الخاصة بك
 
 # 4. شغّل migrations قاعدة البيانات
-npx prisma migrate dev
+npm run db:migrate
 
-# 5. شغّل خادم التطوير
+# 5. ازرع البيانات الأساسية (أدوار النظام + المحافظات والمناطق)
+npm run db:seed
+
+# 6. شغّل خادم التطوير
 npm run dev
 ```
+
+> **ملاحظة Prisma 7:** روابط الاتصال لم تعد تُوضع في `schema.prisma`؛ بل في
+> `prisma7.config.ts` (يقرأ `.env.local` و`.env`). كما يتطلب Prisma 7 استخدام
+> driver adapter (`@prisma/adapter-pg` + `pg`) — تم تكوينه في `src/lib/db/prisma.ts`.
 
 ## متغيرات البيئة المطلوبة
 
@@ -57,36 +64,44 @@ npm run dev
 ```
 src/
   app/
-    (public)/          # صفحات عامة
-    (auth)/            # تسجيل دخول / إنشاء حساب
-    seeker/            # بوابة الباحث عن عمل
-    employer/          # بوابة صاحب العقار
-    admin/             # لوحة الإدارة
-    api/               # API Routes
+    (auth)/            # تسجيل الدخول / إنشاء حساب / تأكيد الهاتف
+    api/auth/          # NextAuth route handler
+    page.tsx           # الصفحة الرئيسية (Landing)
   components/
-    ui/                # مكونات واجهة مشتركة
-    layout/            # Header, Footer, Navigation
-    jobs/              # بطاقات وقوائم الوظائف
-    forms/             # نماذج المشروع
-    dashboard/         # مكونات لوحات التحكم
+    forms/             # نماذج المصادقة (client components)
   lib/
-    auth/              # إعداد NextAuth
-    db/                # Prisma client
+    auth/              # إعداد NextAuth + type augmentation
+    db/                # Prisma client (+ driver adapter)
     permissions/       # منطق الصلاحيات
     validation/        # Zod schemas
-    notifications/     # إشعارات داخلية
-    rate-limit/        # Rate limiting
+    rate-limit/        # Rate limiting في الذاكرة
+    sms/               # مزودو رسائل SMS (dev حقيقي مقيّد + Twilio غير مُنفَّذ)
   server/
+    actions/           # Server Actions
     services/          # منطق الأعمال
-    repositories/      # طبقة قاعدة البيانات
+  proxy.ts            # حماية المسارات (middleware سابقًا — Next 16)
 prisma/
   schema.prisma        # نموذج البيانات
   migrations/          # ملفات الـ migrations
-  seed.ts              # بيانات تطوير أولية
-tests/
-  unit/
-  integration/
-  e2e/
+  seed.ts              # أدوار النظام + المحافظات والمناطق
+prisma7.config.ts      # إعداد Prisma 7 (روابط الاتصال + migrations)
+```
+
+> `(public)`, `seeker/`, `employer/`, `admin/`, `components/ui|layout|jobs|dashboard`,
+> و`server/repositories/` و`tests/` لم تُبنَ بعد — انظر `PROJECT_PROGRESS.md`.
+
+## الأوامر
+
+```bash
+npm run dev          # خادم التطوير
+npm run build        # بناء الإنتاج
+npm run start        # تشغيل الإنتاج
+npm run lint         # ESLint
+npm run typecheck    # tsc --noEmit
+npm run db:generate  # prisma generate
+npm run db:migrate   # prisma migrate dev
+npm run db:seed      # زرع البيانات الأساسية
+npm run db:studio    # Prisma Studio
 ```
 
 ## تشغيل الاختبارات
@@ -127,4 +142,3 @@ npm run build
 
 [PROJECT_PROGRESS.md](./PROJECT_PROGRESS.md)
 
-# Bawab-Masr
