@@ -23,6 +23,15 @@ const nextConfig: NextConfig = {
     ];
   },
 
+  // ضغط البيانات وتحسين الأداء
+  compress: true,
+  poweredByHeader: false,
+
+  // تحسين الصور للإنتاج
+  images: {
+    formats: ["image/avif", "image/webp"],
+  },
+
   // منع تسريب معلومات الخادم
   serverExternalPackages: ["@prisma/client", "prisma"],
 

@@ -1,0 +1,48 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <defs>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#123F67" />
+      <stop offset="100%" stop-color="#082038" />
+    </linearGradient>
+    <linearGradient id="doorGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#10B981" />
+      <stop offset="100%" stop-color="#047857" />
+    </linearGradient>
+    <filter id="shadow" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="2" stdDeviation="2" flood-opacity="0.3" />
+    </filter>
+  </defs>
+
+  <!-- Background rounded squircle -->
+  <rect width="64" height="64" rx="16" fill="url(#bgGrad)" />
+
+  <!-- Outer building silhouette / gate outline -->
+  <path
+    d="M32 9c-11 0-20 9-20 20v26h40V29c0-11-9-20-20-20Z"
+    fill="#ffffff"
+    fill-opacity="0.12"
+  />
+
+  <!-- Main White Architectural Arch -->
+  <path
+    d="M19 55V31a13 13 0 0 1 26 0v24H19Z"
+    fill="#ffffff"
+    filter="url(#shadow)"
+  />
+
+  <!-- Emerald Green Inner Portal / Gateway -->
+  <path
+    d="M26 55V32.5a6 6 0 0 1 12 0V55H26Z"
+    fill="url(#doorGrad)"
+  />
+
+  <!-- Brass Keyhole / Handle -->
+  <circle cx="35" cy="43.5" r="1.8" fill="#FDE68A" />
+  <rect x="34.4" y="43.5" width="1.2" height="3" rx="0.6" fill="#FDE68A" />
+
+  <!-- Top Star Accent (رمز الجودة والموثوقية) -->
+  <polygon
+    points="32,15 33.6,18.8 37.8,19.2 34.6,22 35.6,26.2 32,24 28.4,26.2 29.4,22 26.2,19.2 30.4,18.8"
+    fill="#34D399"
+  />
+</svg>
