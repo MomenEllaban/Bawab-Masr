@@ -102,6 +102,6 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     },
   },
 
-  // عدم الكشف عن stack traces
-  debug: process.env.NODE_ENV === "development",
+  // عدم الكشف عن stack traces — التفعيل عبر AUTH_DEBUG=1 فقط
+  debug: process.env.AUTH_DEBUG === "1",
 });

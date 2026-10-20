@@ -27,11 +27,17 @@ export type AuthActionState = {
   success?: string;
 };
 
+const GENERIC_ERROR = "حدث خطأ غير متوقع، حاول مرة أخرى";
+
 async function getClientIp(): Promise<string> {
-  const h = await headers();
-  const forwarded = h.get("x-forwarded-for");
-  if (forwarded) return forwarded.split(",")[0].trim();
-  return h.get("x-real-ip") ?? "unknown";
+  try {
+    const h = await headers();
+    const forwarded = h.get("x-forwarded-for");
+    if (forwarded) return forwarded.split(",")[0].trim();
+    return h.get("x-real-ip") ?? "unknown";
+  } catch {
+    return "unknown";
+  }
 }
 
 /** يعيد أول رسالة خطأ من Zod */
@@ -62,20 +68,25 @@ export async function registerAction(
   }
 
   const ip = await getClientIp();
-  const result = await registerUser(parsed.data, ip);
 
-  if (!result.ok) {
-    return { error: result.error };
+  let data: { phone: string; otpSent: boolean } | undefined;
+  try {
+    const result = await registerUser(parsed.data, ip);
+    if (!result.ok) {
+      return { error: result.error };
+    }
+    data = result.data;
+  } catch (error) {
+    console.error("[registerAction]", error);
+    return { error: GENERIC_ERROR };
   }
 
-  const data = result.data;
   if (!data) {
-    return { error: "تعذر إنشاء الحساب، حاول مرة أخرى" };
+    return { error: GENERIC_ERROR };
   }
 
-  const { phone, otpSent } = data;
-  const params = new URLSearchParams({ phone });
-  if (!otpSent) params.set("otpFailed", "1");
+  const params = new URLSearchParams({ phone: data.phone });
+  if (!data.otpSent) params.set("otpFailed", "1");
   redirect(`/verify-phone?${params.toString()}`);
 }
 
@@ -110,6 +121,7 @@ export async function loginAction(
     });
   } catch (error) {
     if (error instanceof AuthError) {
+      console.error("[loginAction]", error.type, error.message);
       if (error.type === "CredentialsSignin") {
         return { error: "رقم الهاتف أو كلمة المرور غير صحيحة" };
       }
@@ -140,10 +152,15 @@ export async function verifyOtpAction(
   }
 
   const ip = await getClientIp();
-  const result = await verifyOtp(parsed.data.phone, parsed.data.otp, ip);
 
-  if (!result.ok) {
-    return { error: result.error };
+  try {
+    const result = await verifyOtp(parsed.data.phone, parsed.data.otp, ip);
+    if (!result.ok) {
+      return { error: result.error };
+    }
+  } catch (error) {
+    console.error("[verifyOtpAction]", error);
+    return { error: GENERIC_ERROR };
   }
 
   revalidatePath("/verify-phone");
@@ -161,10 +178,15 @@ export async function resendOtpAction(
   }
 
   const ip = await getClientIp();
-  const result = await resendOtpForPhone(parsed.data.phone, ip);
 
-  if (!result.ok) {
-    return { error: result.error };
+  try {
+    const result = await resendOtpForPhone(parsed.data.phone, ip);
+    if (!result.ok) {
+      return { error: result.error };
+    }
+  } catch (error) {
+    console.error("[resendOtpAction]", error);
+    return { error: GENERIC_ERROR };
   }
 
   return { success: "تم إرسال رمز تحقق جديد" };
@@ -175,5 +197,21 @@ export async function resendOtpAction(
 // ============================================================
 
 export async function logoutAction(): Promise<void> {
-  await signOut({ redirectTo: "/" });
+  try {
+    await signOut({ redirectTo: "/" });
+  } catch (error) {
+    // signOut يرمي خطأ NEXT_REDIRECT عند النجاح — نعيده كما هو
+    const digest =
+      error !== null &&
+      typeof error === "object" &&
+      "digest" in error &&
+      typeof error.digest === "string"
+        ? error.digest
+        : "";
+    if (digest.startsWith("NEXT_REDIRECT")) {
+      throw error;
+    }
+    console.error("[logoutAction]", error);
+    redirect("/");
+  }
 }

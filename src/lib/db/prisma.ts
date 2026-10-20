@@ -6,6 +6,26 @@ const globalForPrisma = globalThis as unknown as {
   prisma: PrismaClient | undefined;
 };
 
+// إزالة sslmode من الرابط وتمرير ssl صريحًا
+// (تحذير مكتبة pg عن أسماء أوضاع SSL القديمة)
+function buildPgOptions(connectionString: string): {
+  connectionString: string;
+  ssl?: { rejectUnauthorized: boolean };
+} {
+  try {
+    const url = new URL(connectionString);
+    const sslmode = url.searchParams.get("sslmode");
+    url.searchParams.delete("sslmode");
+    const sslRequired = sslmode !== null && sslmode !== "disable";
+    return {
+      connectionString: url.toString(),
+      ssl: sslRequired ? { rejectUnauthorized: true } : undefined,
+    };
+  } catch {
+    return { connectionString };
+  }
+}
+
 // Prisma 7 يتطلب driver adapter — نستخدم pg مع رابط Neon (connection pooling)
 function createPrismaClient() {
   const connectionString = process.env.DATABASE_URL;
@@ -14,13 +34,10 @@ function createPrismaClient() {
       "DATABASE_URL غير مضبوط — أضف الرابط في .env.local (راجع .env.example)"
     );
   }
-  const adapter = new PrismaPg({ connectionString });
+  const adapter = new PrismaPg(buildPgOptions(connectionString));
   return new PrismaClient({
     adapter,
-    log:
-      process.env.NODE_ENV === "development"
-        ? ["query", "warn", "error"]
-        : ["error"],
+    log: ["error"],
   });
 }
 

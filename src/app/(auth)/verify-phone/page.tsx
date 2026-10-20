@@ -20,7 +20,7 @@ export default async function VerifyPhonePage({
     return (
       <div className="card text-center">
         <h1 className="text-2xl font-bold mb-3">تأكيد رقم الهاتف</h1>
-        <p className="text-gray-500 mb-6">
+        <p className="text-ink-soft mb-6">
           لم يتم تحديد رقم الهاتف. ابدأ بإنشاء حساب أولاً.
         </p>
         <Link href="/register" className="btn btn-primary">

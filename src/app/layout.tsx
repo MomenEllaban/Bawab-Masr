@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Cairo } from "next/font/google";
+import SiteHeader from "@/components/layout/site-header";
 import "./globals.css";
 
 const cairo = Cairo({
@@ -36,7 +37,8 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="ar" dir="rtl" className={cairo.variable}>
-      <body className="font-cairo antialiased bg-gray-50 text-gray-900">
+      <body className="font-cairo antialiased bg-canvas text-ink">
+        <SiteHeader />
         {children}
       </body>
     </html>

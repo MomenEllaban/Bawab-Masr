@@ -45,6 +45,9 @@ class TwilioSmsProvider implements SmsProvider {
 // اختيار المزود بناءً على المتغيرات
 // ============================================================
 
+// اختيار المزود بناءً على المتغيرات — تُؤجَّل القراءة حتى لحظة الإرسال
+// حتى لا يفشل البناء في الإنتاج (NODE_ENV=production) قبل تكوين SMS حقيقي
+
 function getSmsProvider(): SmsProvider {
   const provider = process.env.SMS_PROVIDER ?? "dev";
 
@@ -64,4 +67,8 @@ function getSmsProvider(): SmsProvider {
   throw new Error(`مزود SMS غير معروف: ${provider}`);
 }
 
-export const smsProvider = getSmsProvider();
+export const smsProvider: SmsProvider = {
+  sendOtp(phone, code) {
+    return getSmsProvider().sendOtp(phone, code);
+  },
+};

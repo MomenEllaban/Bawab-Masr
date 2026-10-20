@@ -2,6 +2,7 @@
 
 import { useActionState } from "react";
 import Link from "next/link";
+import { LogIn, ShieldCheck } from "lucide-react";
 import { loginAction, type AuthActionState } from "@/server/actions/auth";
 
 const initialState: AuthActionState = {};
@@ -19,14 +20,15 @@ export default function LoginForm({
   );
 
   return (
-    <div className="card">
-      <h1 className="text-2xl font-bold mb-2 text-center">تسجيل الدخول</h1>
-      <p className="text-gray-500 text-center mb-6 text-sm">
+    <div className="card p-6 shadow-soft sm:p-8">
+      <h1 className="text-center text-2xl font-extrabold">تسجيل الدخول</h1>
+      <p className="mb-6 mt-2 text-center text-sm leading-relaxed text-ink-soft">
         أدخل رقم هاتفك وكلمة المرور للمتابعة
       </p>
 
       {justVerified && !state.error && (
         <div className="alert alert-success mb-4">
+          <ShieldCheck size={17} aria-hidden />
           تم تأكيد رقم هاتفك بنجاح. يمكنك تسجيل الدخول الآن.
         </div>
       )}
@@ -49,7 +51,7 @@ export default function LoginForm({
             inputMode="numeric"
             autoComplete="tel"
             placeholder="01xxxxxxxxx"
-            className="form-input"
+            className="form-input ltr text-start"
             dir="ltr"
             required
           />
@@ -71,20 +73,17 @@ export default function LoginForm({
 
         <button
           type="submit"
-          className="btn btn-primary w-full justify-center"
+          className={`btn btn-primary btn-block${isPending ? " is-loading" : ""}`}
           disabled={isPending}
         >
-          {isPending ? "جارٍ تسجيل الدخول..." : "تسجيل الدخول"}
+          <LogIn size={16} aria-hidden />
+          تسجيل الدخول
         </button>
       </form>
 
-      <p className="text-center text-sm text-gray-500 mt-6">
+      <p className="mt-6 text-center text-sm text-ink-soft">
         ليس لديك حساب؟{" "}
-        <Link
-          href="/register"
-          className="font-semibold"
-          style={{ color: "var(--color-primary)" }}
-        >
+        <Link href="/register" className="link text-sm">
           إنشاء حساب جديد
         </Link>
       </p>

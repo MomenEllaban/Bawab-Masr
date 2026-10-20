@@ -12,7 +12,13 @@
 | Prisma | 7.10.1 | ORM لقاعدة البيانات |
 | Neon PostgreSQL | — | قاعدة البيانات |
 | NextAuth.js | 5 (beta.32) | المصادقة |
-| Zod | 4+ | التحقق من المدخلات |
+## الميزات الرئيسية
+
+- **مطور للـ client-demo**: 25 اختبار E2E أخضر، كونسول نظيف، بيانات تجريبية جاهزة.
+- لوحات تحكم ثلاث (باحث عن عمل / صاحب عقار / إدارة) + سير عمل كامل للوظائف والتقديمات.
+- طبقة خدمات مشتركة مع `ServiceResult` وسجلات تدقيق + إشعارات.
+- حماية المسارات + صلاحيات، إضافةً إلى sitemap.xml / robots.txt.
+- Next.js 16.4.2 (App Router) + Prisma 7 + NextAuth v5 + Zod 4 + Tailwind 4.
 
 ## متطلبات التشغيل
 
@@ -65,10 +71,16 @@ npm run dev
 src/
   app/
     (auth)/            # تسجيل الدخول / إنشاء حساب / تأكيد الهاتف
+    jobs/              # قائمة الوظائف + تفاصيل الوظيفة [slug]
+    how-it-works/ about/ contact/ faq/ terms/ privacy/ safety/
+    for-job-seekers/ for-property-owners/
     api/auth/          # NextAuth route handler
     page.tsx           # الصفحة الرئيسية (Landing)
+    error.tsx          # حدود الخطأ العامة (عربي)
+    not-found.tsx      # صفحة 404 (عربي)
   components/
     forms/             # نماذج المصادقة (client components)
+    layout/            # SiteHeader حسب حالة الجلسة + تسجيل الخروج
   lib/
     auth/              # إعداد NextAuth + type augmentation
     db/                # Prisma client (+ driver adapter)
@@ -77,7 +89,7 @@ src/
     rate-limit/        # Rate limiting في الذاكرة
     sms/               # مزودو رسائل SMS (dev حقيقي مقيّد + Twilio غير مُنفَّذ)
   server/
-    actions/           # Server Actions
+    actions/           # Server Actions (كلها بمعالجة أخطاء كاملة)
     services/          # منطق الأعمال
   proxy.ts            # حماية المسارات (middleware سابقًا — Next 16)
 prisma/
@@ -85,10 +97,22 @@ prisma/
   migrations/          # ملفات الـ migrations
   seed.ts              # أدوار النظام + المحافظات والمناطق
 prisma7.config.ts      # إعداد Prisma 7 (روابط الاتصال + migrations)
+tests/
+  e2e/                 # اختبارات Playwright
+playwright.config.ts   # إعداد Playwright
 ```
 
-> `(public)`, `seeker/`, `employer/`, `admin/`, `components/ui|layout|jobs|dashboard`,
-> و`server/repositories/` و`tests/` لم تُبنَ بعد — انظر `PROJECT_PROGRESS.md`.
+## حسابات تجريبية (للعرض)
+
+تُنشأ تلقائياً عند `npm run db:seed` (في بيئة التطوير). يُتجاوز الـ seed تلقائياً إذا `NODE_ENV === "production"`.
+
+| الدور | رقم الهاتف | كلمة المرور | ملاحظات |
+|---|---|---|---|
+| باحث عن عمل (Seeker) | `01000000001` | `Demo1234!` | أحمد علي (حساب تجريبي) |
+| صاحب عقار (Employer) | `01000000002` | `Demo1234!` | محمود حسن / اتحاد ملاك سموحة |
+| مدير النظام (Admin) | `01000000003` | `Demo1234!` | مديرا النظام (ADMIN) |
+
+يوجد 9 وظائف تجريبية (5 قيد المراجعة + 4 منشورة)، 2 طلب تقديم، 1 وظيفة محفوظة، 1 عقار تجريبي.
 
 ## الأوامر
 
@@ -98,6 +122,7 @@ npm run build        # بناء الإنتاج
 npm run start        # تشغيل الإنتاج
 npm run lint         # ESLint
 npm run typecheck    # tsc --noEmit
+npm run test:e2e     # اختبارات Playwright E2E (تستخدم dev server على 3000)
 npm run db:generate  # prisma generate
 npm run db:migrate   # prisma migrate dev
 npm run db:seed      # زرع البيانات الأساسية

@@ -2,6 +2,7 @@
 
 import { useActionState, useState } from "react";
 import Link from "next/link";
+import { UserRound, Building2, UserPlus, Phone, KeyRound } from "lucide-react";
 import { registerAction, type AuthActionState } from "@/server/actions/auth";
 
 const initialState: AuthActionState = {};
@@ -16,9 +17,9 @@ export default function RegisterForm({ defaultRole }: { defaultRole?: Role }) {
   const [role, setRole] = useState<Role>(defaultRole ?? "SEEKER");
 
   return (
-    <div className="card">
-      <h1 className="text-2xl font-bold mb-2 text-center">إنشاء حساب جديد</h1>
-      <p className="text-gray-500 text-center mb-6 text-sm">
+    <div className="card p-6 shadow-soft sm:p-8">
+      <h1 className="text-center text-2xl font-extrabold">إنشاء حساب جديد</h1>
+      <p className="mb-6 mt-2 text-center text-sm leading-relaxed text-ink-soft">
         سجّل بياناتك وسنرسل لك رمز تحقق على هاتفك
       </p>
 
@@ -28,35 +29,55 @@ export default function RegisterForm({ defaultRole }: { defaultRole?: Role }) {
         <input type="hidden" name="role" value={role} />
 
         {/* نوع الحساب */}
-        <div>
-          <span className="form-label">نوع الحساب</span>
+        <fieldset>
+          <legend className="form-label">نوع الحساب</legend>
           <div className="grid grid-cols-2 gap-3">
             <button
               type="button"
               onClick={() => setRole("SEEKER")}
-              className={`p-3 rounded-lg border-2 text-center transition-colors ${
+              aria-pressed={role === "SEEKER"}
+              className={`rounded-card border-2 p-4 text-center transition-colors ${
                 role === "SEEKER"
-                  ? "border-blue-900 bg-blue-50"
-                  : "border-gray-200 hover:border-gray-300"
+                  ? "border-navy bg-navy-50"
+                  : "border-line bg-surface hover:border-navy-700/40"
               }`}
             >
-              <span className="block text-2xl mb-1">👤</span>
-              <span className="font-semibold text-sm">باحث عن عمل</span>
+              <UserRound
+                size={24}
+                aria-hidden
+                className={`mx-auto mb-2 ${
+                  role === "SEEKER" ? "text-navy" : "text-ink-mute"
+                }`}
+              />
+              <span className="block text-sm font-bold">باحث عن عمل</span>
+              <span className="mt-1 block text-xs leading-relaxed text-ink-mute">
+                ابحث عن وظائف وقّدم طلباتك
+              </span>
             </button>
             <button
               type="button"
               onClick={() => setRole("EMPLOYER")}
-              className={`p-3 rounded-lg border-2 text-center transition-colors ${
+              aria-pressed={role === "EMPLOYER"}
+              className={`rounded-card border-2 p-4 text-center transition-colors ${
                 role === "EMPLOYER"
-                  ? "border-blue-900 bg-blue-50"
-                  : "border-gray-200 hover:border-gray-300"
+                  ? "border-navy bg-navy-50"
+                  : "border-line bg-surface hover:border-navy-700/40"
               }`}
             >
-              <span className="block text-2xl mb-1">🏠</span>
-              <span className="font-semibold text-sm">صاحب عقار</span>
+              <Building2
+                size={24}
+                aria-hidden
+                className={`mx-auto mb-2 ${
+                  role === "EMPLOYER" ? "text-navy" : "text-ink-mute"
+                }`}
+              />
+              <span className="block text-sm font-bold">صاحب عقار</span>
+              <span className="mt-1 block text-xs leading-relaxed text-ink-mute">
+                انشر وظائف واستقبل الطلبات
+              </span>
             </button>
           </div>
-        </div>
+        </fieldset>
 
         <div>
           <label htmlFor="name" className="form-label">
@@ -76,38 +97,48 @@ export default function RegisterForm({ defaultRole }: { defaultRole?: Role }) {
           <label htmlFor="phone" className="form-label">
             رقم الهاتف
           </label>
-          <input
-            id="phone"
-            name="phone"
-            type="tel"
-            inputMode="numeric"
-            autoComplete="tel"
-            placeholder="01xxxxxxxxx"
-            className="form-input"
-            dir="ltr"
-            required
-          />
-          <p className="text-xs text-gray-400 mt-1">
-            سيُرسل رمز التحقق إلى هذا الرقم
-          </p>
+          <div className="relative">
+            <Phone
+              size={16}
+              aria-hidden
+              className="pointer-events-none absolute end-3 top-1/2 -translate-y-1/2 text-ink-mute"
+            />
+            <input
+              id="phone"
+              name="phone"
+              type="tel"
+              inputMode="numeric"
+              autoComplete="tel"
+              placeholder="01xxxxxxxxx"
+              className="form-input ltr pe-10 text-start"
+              dir="ltr"
+              required
+            />
+          </div>
+          <p className="form-hint">سيُرسل رمز التحقق إلى هذا الرقم</p>
         </div>
 
         <div>
           <label htmlFor="password" className="form-label">
             كلمة المرور
           </label>
-          <input
-            id="password"
-            name="password"
-            type="password"
-            autoComplete="new-password"
-            minLength={8}
-            className="form-input"
-            required
-          />
-          <p className="text-xs text-gray-400 mt-1">
-            8 أحرف على الأقل
-          </p>
+          <div className="relative">
+            <KeyRound
+              size={16}
+              aria-hidden
+              className="pointer-events-none absolute end-3 top-1/2 -translate-y-1/2 text-ink-mute"
+            />
+            <input
+              id="password"
+              name="password"
+              type="password"
+              autoComplete="new-password"
+              minLength={8}
+              className="form-input pe-10"
+              required
+            />
+          </div>
+          <p className="form-hint">8 أحرف على الأقل</p>
         </div>
 
         <div>
@@ -126,7 +157,7 @@ export default function RegisterForm({ defaultRole }: { defaultRole?: Role }) {
         </div>
 
         {role === "EMPLOYER" && (
-          <div className="space-y-4 border-t border-gray-100 pt-4">
+          <div className="space-y-4 rounded-card border border-line bg-muted/40 p-4">
             <div>
               <label htmlFor="employerName" className="form-label">
                 اسم صاحب العقار / الشركة
@@ -160,20 +191,17 @@ export default function RegisterForm({ defaultRole }: { defaultRole?: Role }) {
 
         <button
           type="submit"
-          className="btn btn-primary w-full justify-center"
+          className={`btn btn-primary btn-block${isPending ? " is-loading" : ""}`}
           disabled={isPending}
         >
-          {isPending ? "جارٍ إنشاء الحساب..." : "إنشاء الحساب"}
+          <UserPlus size={16} aria-hidden />
+          إنشاء الحساب
         </button>
       </form>
 
-      <p className="text-center text-sm text-gray-500 mt-6">
+      <p className="mt-6 text-center text-sm text-ink-soft">
         لديك حساب بالفعل؟{" "}
-        <Link
-          href="/login"
-          className="font-semibold"
-          style={{ color: "var(--color-primary)" }}
-        >
+        <Link href="/login" className="link text-sm">
           تسجيل الدخول
         </Link>
       </p>
