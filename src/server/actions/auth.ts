@@ -126,9 +126,17 @@ export async function loginAction(
     const userRecord = await prisma.user.findUnique({
       where: { phone: parsed.data.phone },
       select: {
+        lastLoginAt: true,
         systemRoles: { include: { role: true } },
         employerProfile: { select: { id: true } },
-        seekerProfile: { select: { id: true } },
+        seekerProfile: {
+          select: {
+            id: true,
+            bio: true,
+            yearsExperience: true,
+            preferredWorkType: true,
+          },
+        },
       },
     });
 
@@ -142,7 +150,18 @@ export async function loginAction(
       } else if (userRecord.employerProfile) {
         targetUrl = "/employer";
       } else if (userRecord.seekerProfile) {
-        targetUrl = "/seeker";
+        // إذا كان باحثاً عن عمل وهو تسجيل دخوله الأول أو ملفه غير مكتمل، يوجّه لصفحة استكمال الملف
+        const isFirstLogin = !userRecord.lastLoginAt;
+        const isIncomplete =
+          !userRecord.seekerProfile.bio ||
+          userRecord.seekerProfile.yearsExperience === null ||
+          !userRecord.seekerProfile.preferredWorkType;
+
+        if (isFirstLogin || isIncomplete) {
+          targetUrl = "/seeker/profile?welcome=1";
+        } else {
+          targetUrl = "/seeker";
+        }
       }
     }
   }

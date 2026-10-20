@@ -20,6 +20,7 @@ import PageHeader from "@/components/ui/page-header";
 import StatCard from "@/components/ui/stat-card";
 import EmptyState from "@/components/ui/empty-state";
 import StatusBadge from "@/components/ui/status-badge";
+import ProfileCompletionCard from "@/components/seeker/profile-completion-card";
 import {
   APPLICATION_STATUS_BADGE,
   APPLICATION_STATUS_LABELS,
@@ -64,7 +65,9 @@ export default async function SeekerDashboardPage() {
     }),
     prisma.seekerProfile.findUnique({
       where: { userId: user.id },
-      select: { id: true },
+      include: {
+        skills: { include: { skill: { select: { name: true } } } },
+      },
     }),
   ]);
 
@@ -82,18 +85,7 @@ export default async function SeekerDashboardPage() {
         }
       />
 
-      {!seekerProfile ? (
-        <div className="alert alert-info mb-6">
-          <UserRound size={18} aria-hidden />
-          <div>
-            ملفك الشخصي غير مكتمل — أنشئ ملفك ليظهر لأصحاب العقارات عند
-            تقديبك.{" "}
-            <Link href="/seeker/profile" className="link">
-              أنشئ ملفك الآن
-            </Link>
-          </div>
-        </div>
-      ) : null}
+      <ProfileCompletionCard profile={seekerProfile} />
 
       <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-5">
         <StatCard label="إجمالي الطلبات" value={total} icon={FileText} />
