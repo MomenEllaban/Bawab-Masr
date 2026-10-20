@@ -37,6 +37,8 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
             systemRoles: {
               include: { role: true },
             },
+            employerProfile: { select: { id: true } },
+            seekerProfile: { select: { id: true } },
           },
         });
 
@@ -56,6 +58,20 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           data: { lastLoginAt: new Date() },
         });
 
+        const systemRoles = user.systemRoles.map((r) => r.role.name);
+        const isSystemAdmin = systemRoles.some((r) =>
+          ["ADMIN", "MODERATOR", "CUSTOMER_SUPPORT"].includes(r)
+        );
+
+        let defaultDashboard = "/";
+        if (isSystemAdmin) {
+          defaultDashboard = "/admin";
+        } else if (user.employerProfile) {
+          defaultDashboard = "/employer";
+        } else if (user.seekerProfile) {
+          defaultDashboard = "/seeker";
+        }
+
         return {
           id: user.id,
           name: user.name,
@@ -63,7 +79,8 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           email: user.email ?? undefined,
           status: user.status,
           isPhoneVerified: !!user.phoneVerifiedAt,
-          systemRoles: user.systemRoles.map((r) => r.role.name),
+          systemRoles,
+          defaultDashboard,
         };
       },
     }),
@@ -87,6 +104,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         token.status = (user as { status?: string }).status;
         token.isPhoneVerified = (user as { isPhoneVerified?: boolean }).isPhoneVerified;
         token.systemRoles = (user as { systemRoles?: string[] }).systemRoles ?? [];
+        token.defaultDashboard = (user as { defaultDashboard?: string }).defaultDashboard ?? "/";
       }
       return token;
     },
@@ -97,6 +115,8 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         session.user.status = token.status as string;
         session.user.isPhoneVerified = token.isPhoneVerified as boolean;
         session.user.systemRoles = token.systemRoles as string[];
+        (session.user as { defaultDashboard?: string }).defaultDashboard =
+          (token.defaultDashboard as string) ?? "/";
       }
       return session;
     },

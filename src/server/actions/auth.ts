@@ -21,6 +21,7 @@ import {
   resendOtpForPhone,
   verifyOtp,
 } from "@/server/services/auth-service";
+import { prisma } from "@/lib/db/prisma";
 
 export type AuthActionState = {
   error?: string;
@@ -108,16 +109,51 @@ export async function loginAction(
   }
 
   const callbackUrlRaw = formData.get("callbackUrl");
-  const callbackUrl =
-    typeof callbackUrlRaw === "string" && callbackUrlRaw.startsWith("/")
-      ? callbackUrlRaw
-      : "/";
+  let targetUrl: string | null = null;
+
+  // إذا كان المستخدم يحاول الوصول لصفحة محمية محددة مسبقاً (غير صفحات الدخول والرئيسية)
+  if (
+    typeof callbackUrlRaw === "string" &&
+    callbackUrlRaw.startsWith("/") &&
+    callbackUrlRaw !== "/" &&
+    !callbackUrlRaw.startsWith("/login") &&
+    !callbackUrlRaw.startsWith("/register") &&
+    !callbackUrlRaw.startsWith("/verify-phone")
+  ) {
+    targetUrl = callbackUrlRaw;
+  } else {
+    // تحديد لوحة التحكم بناءً على صفة ونوع حساب المستخدم
+    const userRecord = await prisma.user.findUnique({
+      where: { phone: parsed.data.phone },
+      select: {
+        systemRoles: { include: { role: true } },
+        employerProfile: { select: { id: true } },
+        seekerProfile: { select: { id: true } },
+      },
+    });
+
+    if (userRecord) {
+      const isSystemAdmin = userRecord.systemRoles.some(
+        (r: { role: { name: string } }) =>
+          ["ADMIN", "MODERATOR", "CUSTOMER_SUPPORT"].includes(r.role.name)
+      );
+      if (isSystemAdmin) {
+        targetUrl = "/admin";
+      } else if (userRecord.employerProfile) {
+        targetUrl = "/employer";
+      } else if (userRecord.seekerProfile) {
+        targetUrl = "/seeker";
+      }
+    }
+  }
+
+  targetUrl = targetUrl || "/";
 
   try {
     await signIn("credentials", {
       phone: parsed.data.phone,
       password: parsed.data.password,
-      redirectTo: callbackUrl,
+      redirectTo: targetUrl,
     });
   } catch (error) {
     if (error instanceof AuthError) {

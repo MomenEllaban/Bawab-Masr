@@ -34,13 +34,14 @@ export default auth(function proxy(req: NextRequest & { auth: unknown }) {
     return NextResponse.redirect(verifyUrl);
   }
 
-  // المستخدم المسجّل لا يعود لصفحات الدخول/التسجيل
-  // (تحقق الأدوار الإدارية يتم في كل صفحة على الخادم عبر requireAdmin)
+  // المستخدم المسجّل لا يعود لصفحات الدخول/التسجيل — يُوجّه مباشرة للوحته
   if (
     (pathname === "/login" || pathname === "/register") &&
     session?.user
   ) {
-    return NextResponse.redirect(new URL("/", req.url));
+    const destination =
+      (session.user as { defaultDashboard?: string }).defaultDashboard || "/";
+    return NextResponse.redirect(new URL(destination, req.url));
   }
 
   return NextResponse.next();
