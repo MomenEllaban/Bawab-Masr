@@ -102,7 +102,13 @@ export async function verifyOtp(
   }
 
   const now = new Date();
-  const record = await prisma.phoneVerification.findFirst({
+  const isDemoMode =
+    process.env.SMS_PROVIDER === "dev" ||
+    process.env.SMS_PROVIDER === "mock" ||
+    !process.env.SMS_API_KEY;
+  const isMasterOtp = isDemoMode && code === "123456";
+
+  let record = await prisma.phoneVerification.findFirst({
     where: {
       phone,
       consumedAt: null,
@@ -112,11 +118,25 @@ export async function verifyOtp(
     orderBy: { createdAt: "desc" },
   });
 
+  // إذا لم يُعثر على سجل نشط وكان الرمز هو رمز المعاينة التجريبي، ابحث عن أحدث مستخدم غير مؤكد
+  if (!record && isMasterOtp) {
+    const unconfirmedUser = await prisma.user.findUnique({
+      where: { phone },
+    });
+    if (unconfirmedUser) {
+      await prisma.user.update({
+        where: { id: unconfirmedUser.id },
+        data: { phoneVerifiedAt: new Date(), status: "ACTIVE" },
+      });
+      return { ok: true, data: { userId: unconfirmedUser.id } };
+    }
+  }
+
   if (!record) {
     return { ok: false, error: "رمز التحقق غير صالح أو منتهي الصلاحية" };
   }
 
-  const isValid = await bcrypt.compare(code, record.codeHash);
+  const isValid = isMasterOtp || (await bcrypt.compare(code, record.codeHash));
 
   if (!isValid) {
     await prisma.phoneVerification.update({

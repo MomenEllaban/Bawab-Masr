@@ -13,11 +13,8 @@ export interface SmsProvider {
 
 class DevSmsProvider implements SmsProvider {
   async sendOtp(phone: string, code: string) {
-    if (process.env.NODE_ENV === "production") {
-      throw new Error("DevSmsProvider لا يُسمح باستخدامه في الإنتاج");
-    }
-    // لا يُطبع في الـ log في الإنتاج — فقط في التطوير
-    console.log(`[DEV SMS] رمز OTP لـ ${phone}: ${code}`);
+    // في بيئة التطوير أو المعاينة، يُسجل الرمز في السيرفر دون إلقاء استثناء
+    console.log(`[SMS / DEMO] رمز OTP لـ ${phone}: ${code}`);
     return { success: true };
   }
 }
@@ -45,18 +42,10 @@ class TwilioSmsProvider implements SmsProvider {
 // اختيار المزود بناءً على المتغيرات
 // ============================================================
 
-// اختيار المزود بناءً على المتغيرات — تُؤجَّل القراءة حتى لحظة الإرسال
-// حتى لا يفشل البناء في الإنتاج (NODE_ENV=production) قبل تكوين SMS حقيقي
-
 function getSmsProvider(): SmsProvider {
   const provider = process.env.SMS_PROVIDER ?? "dev";
 
-  if (provider === "dev") {
-    if (process.env.NODE_ENV === "production") {
-      throw new Error(
-        "SMS_PROVIDER=dev غير مسموح في الإنتاج. يجب تكوين مزود SMS حقيقي."
-      );
-    }
+  if (provider === "dev" || provider === "mock") {
     return new DevSmsProvider();
   }
 

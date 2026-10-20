@@ -1,7 +1,7 @@
 "use client";
 
 import { useActionState } from "react";
-import { ShieldCheck, Send, TriangleAlert } from "lucide-react";
+import { ShieldCheck, Send, TriangleAlert, Sparkles } from "lucide-react";
 import {
   verifyOtpAction,
   resendOtpAction,
@@ -35,15 +35,42 @@ export default function VerifyPhoneForm({
       <p className="mt-2 text-center text-sm text-ink-soft">
         أرسلنا رمز تحقق مكوّن من 6 أرقام إلى
       </p>
-      <p className="mb-6 mt-1 text-center text-lg font-bold text-navy ltr" dir="ltr">
+      <p className="mb-4 mt-1 text-center text-lg font-bold text-navy ltr" dir="ltr">
         {phone}
       </p>
+
+      {/* شريط المعاينة التجريبي لتسهيل التجربة في أي بيئة */}
+      <div className="mb-5 rounded-2xl border border-emerald-500/30 bg-emerald-50/70 p-4 text-xs text-emerald-950">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <span className="font-bold text-emerald-900 inline-flex items-center gap-1.5 text-xs">
+            <Sparkles size={14} className="text-emerald-700" aria-hidden />
+            وضع المعاينة (Demo Mode)
+          </span>
+          <button
+            type="button"
+            onClick={() => {
+              const input = document.getElementById("otp") as HTMLInputElement;
+              if (input) {
+                input.value = "123456";
+                input.focus();
+              }
+            }}
+            className="rounded-lg bg-emerald-700 px-2.5 py-1 text-white font-bold hover:bg-emerald-800 transition-colors shadow-xs"
+          >
+            تعبئة تلقائية (123456)
+          </button>
+        </div>
+        <p className="mt-2 text-emerald-800 leading-relaxed">
+          نظراً لأن بوابات رسائل SMS في مصر تتطلب عقوداً تجارية، يمكنك استخدام الرمز التجريبي{" "}
+          <strong className="font-mono text-emerald-950 text-sm">123456</strong> للتأكيد الفوري والمتابعة.
+        </p>
+      </div>
 
       {otpFailed && !state.error && (
         <div className="alert alert-warning mb-4">
           <TriangleAlert size={16} aria-hidden />
           تعذّر إرسال الرمز تلقائياً. اضغط &quot;إعادة إرسال الرمز&quot;
-          بالأسفل.
+          بالأسفل أو استخدم الرمز التجريبي أعلاه.
         </div>
       )}
 
